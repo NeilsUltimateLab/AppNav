@@ -135,7 +135,6 @@ extension NavViewController: UINavigationBarDelegate {
     
     func navigationBar(_ navigationBar: UINavigationBar, shouldPop item: UINavigationItem) -> Bool {
         guard let topVC = self.topViewController else { return false }
-        //self.removeChildVC(vc: topVC)
         topVC.willMove(toParent: nil)
         self.viewControllers.removeLast()
         self.topViewController?.willMove(toParent: self)
