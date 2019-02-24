@@ -9,7 +9,7 @@
 import UIKit
 
 extension UIView {
-    func anchor(to anotherView: UIView) {
+    func anchor(_ anotherView: UIView) {
         anotherView.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(anotherView)
         anotherView.leftAnchor.constraint(equalTo: self.leftAnchor).isActive = true
@@ -30,7 +30,7 @@ class NavViewController: UIViewController {
     
     lazy var containerView: UIView = {
         let view = UIView(frame: .zero)
-        view.backgroundColor = .red
+        view.backgroundColor = .white
         return view
     }()
     
@@ -64,7 +64,7 @@ class NavViewController: UIViewController {
     }
 
     func layoutNavigationBar() {
-        self.view.anchor(to: containerView)
+        self.view.anchor(containerView)
         self.view.addSubview(navigationBar)
         navigationBar.topAnchor.constraint(equalTo: self.view.layoutMarginsGuide.topAnchor).isActive = true
         navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
@@ -85,7 +85,7 @@ class NavViewController: UIViewController {
         guard let vc = vc else { return }
         vc.willMove(toParent: self)
         self.addChild(vc)
-        self.containerView.anchor(to: vc.view)
+        self.containerView.anchor(vc.view)
         vc.didMove(toParent: self)
     }
     
@@ -97,10 +97,23 @@ class NavViewController: UIViewController {
     }
     
     func push(viewController: UIViewController) {
-        guard let previousVC = topViewController else { return }
+        guard let previousVC = topViewController else {
+            return
+        }
         self.viewControllers.append(viewController)
-        self.removeChildVC(vc: previousVC)
-        self.addChildVC(child: viewController)
+        
+        previousVC.willMove(toParent: nil)
+        viewController.willMove(toParent: self)
+        let animator = NavAnimatedTransition()
+        let transitionContext = NavTransitionContext(fromViewController: previousVC, toViewController: viewController, isForword: true)
+        transitionContext.isAnimated = true
+        transitionContext.isInteractive = false
+        transitionContext.onCompletion = { (didCompleted) in
+            self.removeChildVC(vc: previousVC)
+            viewController.didMove(toParent: self)
+        }
+        
+        animator.animateTransition(using: transitionContext)
         self.navigationBar.pushItem(viewController.navigationItem, animated: true)
     }
     
@@ -120,11 +133,28 @@ extension NavViewController: UINavigationBarDelegate {
         return .topAttached
     }
     
-    func navigationBar(_ navigationBar: UINavigationBar, didPop item: UINavigationItem) {
-        guard let topVC = self.topViewController else { return }
-        self.removeChildVC(vc: topVC)
+    func navigationBar(_ navigationBar: UINavigationBar, shouldPop item: UINavigationItem) -> Bool {
+        guard let topVC = self.topViewController else { return false }
+        //self.removeChildVC(vc: topVC)
+        topVC.willMove(toParent: nil)
         self.viewControllers.removeLast()
+        self.topViewController?.willMove(toParent: self)
+        
+        let animator = NavAnimatedTransition()
+        let transitionContext = NavTransitionContext(fromViewController: topVC, toViewController: topViewController!, isForword: false)
+        transitionContext.isInteractive = false
+        transitionContext.isAnimated = true
+        transitionContext.onCompletion = { (didCompleted) in
+            self.removeChildVC(vc: topVC)
+            self.topViewController?.didMove(toParent: self)
+        }
+        animator.animateTransition(using: transitionContext)
         self.addChildVC(child: self.topViewController)
+        return true
+    }
+    
+    func navigationBar(_ navigationBar: UINavigationBar, didPop item: UINavigationItem) {
+        
     }
 
 }

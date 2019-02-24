@@ -17,13 +17,19 @@ class TableVC: UIViewController {
         tableView.delegate = self
         tableView.dataSource = self
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cellId")
+        tableView.contentInsetAdjustmentBehavior = .always
         return tableView
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         dataSource = (0...100).compactMap({"Row: \($0 + 1)"})
-        self.view.anchor(to: tableView)
+        self.view.anchor(tableView)
+    }
+    
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        self.tableView.contentInset.top = self.view.superview?.safeAreaInsets.top ?? 0
     }
 
 }
